@@ -1,18 +1,28 @@
 import pytest
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
-@pytest.fixture(scope="function")
-def browser():
-    print("\nstart browser for test..")
-    browser = webdriver.Chrome()
-    yield browser
-    print("\nquit browser..")
-    browser.quit()
 
-@pytest.mark.parametrize('language', ["ru", "en-gb"])
-def test_language(browser, language):
+def pytest_addoption(parser):
+    """Опции командной строки.
+    В командную строку передается параметр вида '--language="es"'
+    По умолчанию передается параметр, включающий английский интерфейс в браузере
+    """
+    parser.addoption('--language', action='store', default='en', help='Choose language')
+
+
+@pytest.fixture(scope="function")
+def browser(request):
+    # В переменную user_language передается параметр из командной строки
+    user_language = request.config.getoption('language')
+
+    # Инициализируются опции браузера
     options = Options()
-    options.add_experimental_option('prefs', {'intl.accept_languages': language})
-    webdriver.Chrome(options=options)
+
+    # В опции вебдрайвера передаем параметр из командной строки
+    options.add_experimental_option('prefs', {'intl.accept_languages': user_language})
+    browser = webdriver.Chrome(options=options)
+
+    browser.implicitly_wait(5)
+    yield browser
+    browser.quit()
